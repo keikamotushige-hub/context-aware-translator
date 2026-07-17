@@ -20,7 +20,7 @@ SYSTEM_INSTRUCTION = (
     "ターゲット層の属性を考慮し、直訳ではなく自然で相手に伝わりやすい言葉遣いに変換してください。"
 )
 
-DEFAULT_MODEL = "gemini-2.0-flash"
+DEFAULT_MODEL = "gemini-flash-latest"
 
 
 def load_config() -> dict[str, str]:

@@ -14,7 +14,7 @@ SYSTEM_INSTRUCTION = (
     "直訳ではなく自然で相手に伝わりやすい言葉遣いに変換してください。"
     "原文の意味と重要な情報を保持し、翻訳結果だけを返してください。"
 )
-DEFAULT_MODEL = "gemini-2.0-flash"
+DEFAULT_MODEL = "gemini-flash-latest"
 TEXT_MIME_TYPES = {
     "text/plain",
     "text/markdown",
