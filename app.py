@@ -35,11 +35,6 @@ TEST_EMAIL = os.getenv("TEST_EMAIL", "test@translator.local")
 TEST_PASSWORD = os.getenv("TEST_PASSWORD", "TestPass123!")
 
 
-def allowed_emails() -> set[str]:
-    """Owner plus configured testers are the only accounts allowed to log in."""
-    extra = os.getenv("TESTER_EMAILS", "")
-    testers = {addr for addr in (e.strip() for e in extra.split(",")) if addr}
-    return {OWNER_EMAIL, TEST_EMAIL, *testers}
 SUPPORTED_FILES = ["txt", "md", "csv", "json", "pdf", "png", "jpg", "jpeg", "webp"]
 TEXT_MIME_TYPES = {
     "text/plain",
@@ -47,6 +42,26 @@ TEXT_MIME_TYPES = {
     "text/csv",
     "application/json",
 }
+COMMON_LANGUAGES = [
+    "日本語",
+    "英語 (English)",
+    "中国語（簡体字）",
+    "中国語（繁体字）",
+    "韓国語",
+    "スペイン語",
+    "ポルトガル語",
+    "フランス語",
+    "ドイツ語",
+    "タイ語",
+    "ベトナム語",
+    "その他（自由入力）",
+]
+
+
+def tester_emails() -> list[str]:
+    """Approved tester emails (comma-separated TEST_EMAILS, or the single TEST_EMAIL)."""
+    raw = setting("TEST_EMAILS") or setting("TEST_EMAIL", TEST_EMAIL)
+    return [item.strip() for item in raw.split(",") if item.strip()]
 
 
 def setting(name: str, default: str = "") -> str:
@@ -86,7 +101,7 @@ def login_view(config: dict[str, str]) -> None:
                 supabase_url=config["supabase_url"],
                 supabase_key=config["supabase_key"],
                 owner_email=OWNER_EMAIL,
-                allowed_emails=allowed_emails(),
+                tester_emails=tester_emails(),
                 email=email,
                 password=password,
             )
@@ -172,11 +187,17 @@ def translation_view(config: dict[str, str], user: AuthenticatedUser) -> None:
 
     with st.sidebar:
         st.header("翻訳設定")
-        target_language = st.text_input("翻訳先の言語", value="日本語")
+        language_choice = st.selectbox("翻訳先の言語", COMMON_LANGUAGES, index=0)
+        if language_choice == "その他（自由入力）":
+            target_language = st.text_input("言語を入力", value="")
+        else:
+            target_language = language_choice.split(" (")[0].split("（")[0]
         target_audience = st.text_input(
             "ターゲット層",
             placeholder="例: 日本を初めて訪れる観光客",
         )
+        st.caption("ターゲット層に合わせて、直訳ではなく自然な表現に翻訳します。")
+        st.divider()
         if st.button("ログアウト", use_container_width=True):
             try:
                 user.client.auth.sign_out()
@@ -229,6 +250,13 @@ def translation_view(config: dict[str, str], user: AuthenticatedUser) -> None:
             height=240,
             label_visibility="collapsed",
         )
+        st.download_button(
+            "テキストとして保存",
+            data=translated.encode("utf-8"),
+            file_name="translation.txt",
+            mime="text/plain",
+            use_container_width=True,
+        )
 
         with st.expander("読み取った原文"):
             st.text(source_text)
@@ -256,9 +284,10 @@ def translation_view(config: dict[str, str], user: AuthenticatedUser) -> None:
 
 def main() -> None:
     st.set_page_config(
-        page_title="文脈特化型翻訳",
+        page_title=APP_NAME,
         page_icon="🌐",
-        layout="centered",
+        layout="wide",
+        initial_sidebar_state="expanded",
     )
     try:
         config = required_settings()

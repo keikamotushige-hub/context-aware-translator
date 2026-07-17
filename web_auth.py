@@ -26,7 +26,7 @@ def authenticate(
     supabase_url: str,
     supabase_key: str,
     owner_email: str,
-    allowed_emails: set[str],
+    tester_emails: list[str],
     email: str,
     password: str,
 ) -> AuthenticatedUser:
@@ -34,11 +34,14 @@ def authenticate(
         raise ValueError("メールアドレスとパスワードを入力してください。")
 
     normalized = email.strip().casefold()
-    allowlist = {addr.strip().casefold() for addr in allowed_emails if addr.strip()}
-    if normalized not in allowlist:
+    owner_normalized = owner_email.strip().casefold()
+    tester_normalized = {t.strip().casefold() for t in tester_emails if t.strip()}
+    allowed = {owner_normalized} | tester_normalized
+
+    # Restrict access to the owner and approved testers before any auth call.
+    if normalized not in allowed:
         raise AuthenticationError(
-            "このアカウントはログインを許可されていません。"
-            "オーナーまたはテスターのアカウントでログインしてください。"
+            "このアカウントには利用権限がありません。オーナーまたはテスターのみ利用できます。"
         )
 
     client = create_client(supabase_url, supabase_key)
@@ -53,21 +56,17 @@ def authenticate(
         raise AuthenticationError("ログイン情報を取得できませんでした。")
     actual_email = response.user.email or email.strip()
 
-    # Enforce the allowlist against the email Supabase actually authenticated.
-    if actual_email.strip().casefold() not in allowlist:
+    # Re-check the confirmed email from Supabase against the allowlist.
+    if actual_email.casefold() not in allowed:
         try:
             client.auth.sign_out()
         except Exception:
             pass
         raise AuthenticationError(
-            "このアカウントはログインを許可されていません。"
+            "このアカウントには利用権限がありません。オーナーまたはテスターのみ利用できます。"
         )
 
-    role = (
-        "owner"
-        if actual_email.casefold() == owner_email.strip().casefold()
-        else "test"
-    )
+    role = "owner" if actual_email.casefold() == owner_normalized else "test"
     return AuthenticatedUser(
         id=str(response.user.id),
         email=actual_email,
