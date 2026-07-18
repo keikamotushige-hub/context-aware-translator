@@ -1,61 +1,38 @@
-# 文脈特化型翻訳アプリ
+# Contextia — 文脈特化型AI翻訳
 
-Gemini APIで、ターゲット層に合わせた自然な翻訳を生成するStreamlitアプリです。
-テキスト、UTF-8文書、PDF、画像、カメラ撮影に対応し、翻訳履歴をSupabaseへ保存します。
+鈴木トータルサービス向けの業務用翻訳アプリです。
+Next.js + Gemini + Supabase で構成し、Vercel で公開できます。
 
 ## 機能
 
-- ターゲット層と翻訳先言語を指定
-- テキスト、TXT、Markdown、CSV、JSON、PDF、画像の翻訳
-- スマートフォンやPCのカメラで撮影した文字の読み取り・翻訳
-- Supabase Authによるログイン
-- オーナーは初回に入力したパスワードを登録
-- 行レベルセキュリティ（RLS）付き翻訳履歴
+- オーナー / テスター限定ログイン
+- テキスト・文書・画像の文脈特化翻訳
+- Gemini による多言語翻訳
+- Supabase への翻訳履歴保存（RLS）
+- 利用規約・プライバシー・特商法表記
 
 ## ローカル実行
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-Copy-Item .env.example .env
+```bash
+npm install
+# .env を設定
+npm run dev
 ```
 
-`.env` に実際のGemini/Supabase認証情報と、十分に長い
-`OWNER_SETUP_CODE` を設定します。次にSupabase SQL Editorで `schema.sql` を実行します。
+## Vercel 環境変数
 
-```powershell
-streamlit run app.py
-```
+- `GEMINI_API_KEY`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `OWNER_EMAIL`
+- `OWNER_SETUP_CODE`
+- `TEST_EMAIL`
+- `TEST_PASSWORD`
+- `TEST_EMAILS`
 
-CLI版は次のコマンドで実行できます。
+## ログイン
 
-```powershell
-python translate.py
-```
-
-## 初回ログイン
-
-1. アプリの「オーナーの初回登録」を開く
-2. オーナーパスワードと `.env` の `OWNER_SETUP_CODE` を入力
-3. Supabaseでメール確認が有効なら、届いたメールを確認
-4. 通常のログインフォームからログイン
-
-オーナーIDは `keikamotushige@gmail.com` です。
-
-テスト用の初期値:
-
-- ID: `test@translator.local`
-- Password: `TestPass123!`
-
-ログイン画面の「テストアカウントを準備」を押すと、
-`SUPABASE_SERVICE_ROLE_KEY` を使ってテストユーザーを作成します。
-公開環境ではテストアカウントを無効化するか、パスワードを変更してください。
-
-## Streamlit Community Cloud
-
-1. このリポジトリをGitHubへpush
-2. Streamlit Community Cloudで `app.py` を指定
-3. `.env` の各値をアプリのSecretsへ登録
-
-`.env`、`.credentials.json`、APIキー、Service Role KeyはGitへ追加しないでください。
+1. 初回はオーナーのセットアップコードでオーナー／テスターを準備
+2. オーナー: `OWNER_EMAIL`
+3. テスター: `TEST_EMAIL` / `TEST_PASSWORD`
